@@ -12,12 +12,16 @@ in vec3 VertexColor;
 
 out vec3 Color;
 
-uniform mat4 RotationMatrix;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
 
 void main()
 {
     // 用输入变量初始化输出变量的值
     Color = VertexColor;
     // 初始化一个预定义的vec4类型的变量gl_Position，设定该顶点的位置
-    gl_Position = RotationMatrix *vec4( VertexPosition, 1.0 );
+    gl_Position = projection * view * model *vec4( VertexPosition, 1.0 );
+
 }
