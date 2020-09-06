@@ -23,7 +23,7 @@ void OpenGLWidget::initializeGL() {
   program->link();
   program->bind();
 
-  glClearColor(0.0f, 0.3f, 0.0f, 1.0f);
+  glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
   glEnable(GL_DEPTH_TEST);
 }
 
@@ -33,19 +33,18 @@ void OpenGLWidget::paintGL() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   // vertices array
   QVector<GLfloat> positionData = {
-      -0.8f, -0.8f, 0.0f, // Point 1
-      0.8f,  -0.8f, 0.0f, // Point 2
-      0.0f,  0.8f,  0.0f  // Point 3
+      -0.8f, -0.8f, 0.0f, // Point 0
+      0.8f,  -0.8f, 0.0f, // Point 1
+      0.0f,  0.8f,  0.0f, // Point 2
   };
   QVector<GLfloat> colorData = {
-      1.0f, 0.0f, 0.0f, // R: Point 1 color
-      0.0f, 1.0f, 0.0f, // G: Point 2 color
-      0.0f, 0.0f, 1.0f  // B: Point 3 color
+      1.0f, 0.0f, 0.0f, // R: Point 0 color
+      0.0f, 1.0f, 0.0f, // G: Point 1 color
+      0.0f, 0.0f, 1.0f, // B: Point 2 color
   };
-  //  QVector<GLuint> indices = {
-  //      0, 1, 3, //
-  //      1, 2, 3  //
-  //  };
+  QVector<GLuint> indices = {
+      0, 1, 2 //
+  };
 
   // vertex buffer object
   vbo.create();
@@ -66,5 +65,5 @@ void OpenGLWidget::paintGL() {
   glEnableVertexAttribArray(vColor);
 
   // draw
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+  glDrawArrays(GL_TRIANGLES, 0, indices.size());
 }
