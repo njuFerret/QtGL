@@ -9,22 +9,16 @@ uniform变量是外部程序传递给（vertex和fragment）shader的变量。�
 uniform变量一般用来表示：变换矩阵，材质，光照参数和颜色等信息。
 
 以下是例子：
-
+```glsl
 uniform mat4 viewProjMatrix; //投影+视图矩阵
-
 uniform mat4 viewMatrix;        //视图矩阵
-
 uniform vec3 lightPosition;     //光源位置
-
 uniform float lumaThreshold;
-
 uniform float chromaThreshold;
-
 uniform sampler2D SamplerY;
-
 uniform sampler2D SamplerUV;
-
 uniform mat3 colorConversionMatrix;
+```
 
 2.attribute变量
 
