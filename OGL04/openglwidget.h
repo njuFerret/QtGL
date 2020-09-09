@@ -1,6 +1,7 @@
 #ifndef OPENGLWIDGET_H
 #define OPENGLWIDGET_H
 
+#include <QMatrix4x4>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QTimer>
@@ -33,6 +34,9 @@ private:
   QVector<GLfloat> colorData;
   QVector<QVector3D> cubePositions;
   QVector<QVector3D> rotate_axes;
+
+  QMatrix4x4 matrixView;
+  QMatrix4x4 matrixProjection;
 };
 
 #endif // OPENGLWIDGET_H
