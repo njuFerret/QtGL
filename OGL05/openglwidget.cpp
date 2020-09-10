@@ -1,27 +1,32 @@
 #include "openglwidget.h"
+#include "geometryengine.h"
+
 #include <QOpenGLShader>
 #include <QOpenGLShaderProgram>
 #include <QRandomGenerator>
 #include <QtMath>
 
-OpenGLWidget::OpenGLWidget(QWidget *parent) : QOpenGLWidget(parent), angle(0) {
-  init_plot_data();
+OpenGLWidget::OpenGLWidget(QWidget *parent) : QOpenGLWidget(parent) {
+  //  init_plot_data();
   timer = new QTimer(this);
   timer->setInterval(1000 / 30);
   connect(timer, &QTimer::timeout, this, &OpenGLWidget::onTimerOut);
-  timer->start();
 }
 
-void OpenGLWidget::initializeGL() {
+OpenGLWidget::~OpenGLWidget() {
+  makeCurrent();
+  //    delete program;
+  delete geometries;
+  delete texture;
+  doneCurrent();
+}
 
-  initializeOpenGLFunctions();
-
-  // vertex shader
+void OpenGLWidget::initShader() {
   QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
-  vshader->compileSourceFile("://shader/basic.vert");
+  vshader->compileSourceFile(":/res/shader/basic.vert");
   // fragment shader
   QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
-  fshader->compileSourceFile("://shader/basic.frag");
+  fshader->compileSourceFile(":/res/shader/basic.frag");
 
   // shader program
   program = new QOpenGLShaderProgram(this);
@@ -30,9 +35,42 @@ void OpenGLWidget::initializeGL() {
 
   program->link();
   program->bind();
+}
+
+void OpenGLWidget::initializeGL() {
+
+  initializeOpenGLFunctions();
+
+  // vertex shader
+  initShader();
+  initTextures();
 
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+  // Enable depth buffer
   glEnable(GL_DEPTH_TEST);
+
+  // Enable back face culling
+  glEnable(GL_CULL_FACE);
+
+  geometries = new GeometryEngine;
+
+  timer->start();
+}
+
+void OpenGLWidget::initTextures() {
+  // Load cube.png image
+  texture = new QOpenGLTexture(QImage(":/tex_cube.png").mirrored());
+
+  // Set nearest filtering mode for texture minification
+  texture->setMinificationFilter(QOpenGLTexture::Nearest);
+
+  // Set bilinear filtering mode for texture magnification
+  texture->setMagnificationFilter(QOpenGLTexture::Linear);
+
+  // Wrap texture coordinates by repeating
+  // f.ex. texture coordinate (1.1, 1.2) is same as (0.1, 0.2)
+  texture->setWrapMode(QOpenGLTexture::Repeat);
 }
 
 void OpenGLWidget::resizeGL(int w, int h) {
@@ -42,196 +80,158 @@ void OpenGLWidget::resizeGL(int w, int h) {
   const qreal zNear = 0.01, zFar = 40.0, fov = 45.0;
 
   // Reset projection
-  matrixProjection.setToIdentity();
+  projection.setToIdentity();
 
   // Set perspective projection
-  matrixProjection.perspective(fov, aspect, zNear, zFar);
+  projection.perspective(fov, aspect, zNear, zFar);
 }
 
 void OpenGLWidget::paintGL() {
+
+  // Clear color and depth buffer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // vertex buffer object
-  vbo.create();
-  vbo.bind();
-  int size = positionData.size() + colorData.size();
+  texture->bind();
 
-  // vertex positions
-  vbo.allocate(positionData.data(), size * sizeof(GLfloat));
-  GLuint vPosition = program->attributeLocation("VertexPosition");
-  program->setAttributeBuffer(vPosition, GL_FLOAT, 0, 3, 0);
-  glEnableVertexAttribArray(vPosition);
+  //! [6]
+  // Calculate model view transformation
+  QMatrix4x4 matrix;
+  matrix.translate(0.0, 0.0, -5.0);
+  matrix.rotate(rotation);
 
-  // vertex colors
-  int offset = positionData.size();
-  vbo.write(offset * sizeof(GLfloat), colorData.data(),
-            colorData.size() * sizeof(GLfloat));
-  GLuint vColor = program->attributeLocation("VertexColor");
-  program->setAttributeBuffer(vColor, GL_FLOAT,
-                              colorData.size() * sizeof(GLfloat), 3, 0);
-  glEnableVertexAttribArray(vColor);
+  // Set modelview-projection matrix
+  program->setUniformValue("mvp_matrix", projection * matrix);
+  //! [6]
 
-  // transform
-  int w = width();
-  int h = height();
+  // Use texture unit 0 which contains cube.png
+  program->setUniformValue("texture", 0);
 
-  // perspective设置视景体，也就是空间的可视范围，
-  // translate实现平移，这里是将物体向z轴负方向平移了3个单位，也就是把物体拿远了
-  // rotate物体的旋转角度，第一个参数是旋转角度，后3个参数指定旋转轴。这里指定的就是z轴正方向。
-
-  // 对象本身沿Z轴逆时针旋转(angle<0)
-  //  QMatrix4x4 matrixModel;
-  //  matrixModel.rotate(-angle, 0.0f, 0.0f, 1.0f); //
-  //  局部坐标沿Z洲选择angle角度
-
-  // camera 在Y=radius处，以radius为半径顺时针旋转
-  GLfloat radius = 25.0f;
-  GLfloat camX = radius * qSin(angle * M_PI / 180.0f);
-  GLfloat camZ = radius * qCos(angle * M_PI / 180.0f);
-
-  // 视图变换矩阵，即可视空间矩阵，也就是camera空间矩阵
-  // lookAt函数表明从camera坐标(参数1)，将camera的朝向指向目标对象(参数2),必须提供up向量(参数3)
-  // 这里 camera 从相机位置处指向坐标原点，上向量是(0,1,0)即Y轴
-
-  //  matrixView.lookAt(QVector3D(camX, radius, camZ), QVector3D(0, 0, 0),
-  //  QVector3D(0, 1, 0));
-  matrixView.setToIdentity();
-  matrixView.lookAt(QVector3D(camX, radius, camZ), QVector3D(0, 0, 0),
-                    QVector3D(0, 1, 0));
-
-  // 使用透视变换，以窗口宽高比为比例系数，并设定远近平面
-  //  QMatrix4x4 matrixProjection;
-  //  matrixProjection.setToIdentity();
-  //  matrixProjection.perspective(45.0f, (GLfloat)w / (GLfloat)h, 0.001f,
-  //                               100.0f); // 投影矩阵 倾斜45°
-
-  // 绘制多个物体，在不同的位置上绘制
-  for (int idx = 0; idx < cubePositions.size(); ++idx) {
-
-    // 对象本身沿Z轴逆时针旋转(angle<0)
-    QMatrix4x4 matrixModel;
-    matrixModel.translate(cubePositions.at(idx));
-    //    matrixModel.rotate(-angle, 0.0f,0.0f,1.0f);
-    matrixModel.rotate(-angle, rotate_axes.at(idx));
-
-    program->setUniformValue("model", matrixModel);
-    program->setUniformValue("view", matrixView);
-    program->setUniformValue("projection", matrixProjection);
-
-    // 绘制矩形，
-    glDrawArrays(GL_TRIANGLES, 0, positionData.size());
-  }
+  // Draw cube geometry
+  geometries->drawCubeGeometry(program);
 }
 
 void OpenGLWidget::onTimerOut() {
-  angle += 2.0f;
-  update();
-}
+  //  angle += 2.0f;
+  //  update();
 
-void OpenGLWidget::init_plot_data() {
-  // 本函数初始化所有数据，
-  // 立方体顶点位置矩阵，需要36个顶点(6个面 x 每个面有2个三角形组成 x
-  // 每个三角形有3个顶点)
-  // 以下坐标以第一象限坐标为第0个顶点，按照逆时针依次第1、2、3个顶点
-  positionData = {
-      // Position(3个)   // Texture(2个)
-      -0.8f, -0.8f, -0.8f, //
-      0.8f,  -0.8f, -0.8f, //
-      0.8f,  0.8f,  -0.8f, //
-      0.8f,  0.8f,  -0.8f, //
-      -0.8f, 0.8f,  -0.8f, //
-      -0.8f, -0.8f, -0.8f, //
+  // Decrease angular speed (friction)
+  angularSpeed *= 0.99;
 
-      -0.8f, -0.8f, 0.8f, //
-      0.8f,  -0.8f, 0.8f, //
-      0.8f,  0.8f,  0.8f, //
-      0.8f,  0.8f,  0.8f, //
-      -0.8f, 0.8f,  0.8f, //
-      -0.8f, -0.8f, 0.8f, //
+  // Stop rotation when speed goes below threshold
+  if (angularSpeed < 0.01) {
+    angularSpeed = 0.0;
+  } else {
+    // Update rotation
+    rotation = QQuaternion::fromAxisAndAngle(rotationAxis, angularSpeed) * rotation;
 
-      -0.8f, 0.8f,  0.8f,  //
-      -0.8f, 0.8f,  -0.8f, //
-      -0.8f, -0.8f, -0.8f, //
-      -0.8f, -0.8f, -0.8f, //
-      -0.8f, -0.8f, 0.8f,  //
-      -0.8f, 0.8f,  0.8f,  //
-
-      0.8f,  0.8f,  0.8f,  //
-      0.8f,  0.8f,  -0.8f, //
-      0.8f,  -0.8f, -0.8f, //
-      0.8f,  -0.8f, -0.8f, //
-      0.8f,  -0.8f, 0.8f,  //
-      0.8f,  0.8f,  0.8f,  //
-
-      -0.8f, -0.8f, -0.8f, //
-      0.8f,  -0.8f, -0.8f, //
-      0.8f,  -0.8f, 0.8f,  //
-      0.8f,  -0.8f, 0.8f,  //
-      -0.8f, -0.8f, 0.8f,  //
-      -0.8f, -0.8f, -0.8f, //
-
-      -0.8f, 0.8f,  -0.8f, //
-      0.8f,  0.8f,  -0.8f, //
-      0.8f,  0.8f,  0.8f,  //
-      0.8f,  0.8f,  0.8f,  //
-      -0.8f, 0.8f,  0.8f,  //
-      -0.8f, 0.8f,  -0.8f  //
-  };
-
-  colorData = {
-      1.0f, 0.84f, 0.0f, // R: Point 1 color
-      1.0f, 0.84f, 0.0f, // R: Point 1 color
-      1.0f, 0.84f, 0.0f, // R: Point 1 color
-      1.0f, 0.84f, 0.0f, // R: Point 1 color
-      1.0f, 0.84f, 0.0f, // R: Point 1 color
-      1.0f, 0.84f, 0.0f, // R: Point 1 color
-
-      0.0f, 0.84f, 0.0f, // R: Point 1 color
-      0.0f, 0.84f, 0.0f, // R: Point 1 color
-      0.0f, 0.84f, 0.0f, // R: Point 1 color
-      0.0f, 0.84f, 0.0f, // R: Point 1 color
-      0.0f, 0.84f, 0.0f, // R: Point 1 color
-      0.0f, 0.84f, 0.0f, // R: Point 1 color
-
-      0.0f, 0.0f,  0.84f, // R: Point 1 color
-      0.0f, 0.0f,  0.84f, // R: Point 1 color
-      0.0f, 0.0f,  0.84f, // R: Point 1 color
-      0.0f, 0.0f,  0.84f, // R: Point 1 color
-      0.0f, 0.0f,  0.84f, // R: Point 1 color
-      0.0f, 0.0f,  0.84f, // R: Point 1 color
-
-      1.0f, 0.0f,  0.0f, // R: Point 1 color
-      1.0f, 0.0f,  0.0f, // R: Point 1 color
-      1.0f, 0.0f,  0.0f, // R: Point 1 color
-      1.0f, 0.0f,  0.0f, // R: Point 1 color
-      1.0f, 0.0f,  0.0f, // R: Point 1 color
-      1.0f, 0.0f,  0.0f, // R: Point 1 color
-
-      0.0f, 0.84f, 1.0f, // R: Point 1 color
-      0.0f, 0.84f, 1.0f, // R: Point 1 color
-      0.0f, 0.84f, 1.0f, // R: Point 1 color
-      0.0f, 0.84f, 1.0f, // R: Point 1 color
-      0.0f, 0.84f, 1.0f, // R: Point 1 color
-      0.0f, 0.84f, 1.0f, // R: Point 1 color
-
-      1.0f, 0.0f,  1.0f, // R: Point 1 color
-      1.0f, 0.0f,  1.0f, // R: Point 1 color
-      1.0f, 0.0f,  1.0f, // R: Point 1 color
-      1.0f, 0.0f,  1.0f, // R: Point 1 color
-      1.0f, 0.0f,  1.0f, // R: Point 1 color
-      1.0f, 0.0f,  1.0f  // R: Point 1 color
-  };
-
-  //  立方体在世界坐标下的位置
-  cubePositions = {
-      QVector3D(0.0f, 0.0f, 0.0f),    QVector3D(2.0f, 5.0f, -15.0f),
-      QVector3D(-1.5f, -2.2f, -2.5f), QVector3D(-3.8f, -2.0f, -12.3f),
-      QVector3D(2.4f, -0.4f, -3.5f),  QVector3D(-1.7f, 3.0f, 7.5f),
-      QVector3D(1.3f, -2.0f, -2.5f),  QVector3D(1.5f, 2.0f, -2.5f),
-      QVector3D(1.5f, 0.2f, -1.5f),   QVector3D(-1.3f, 1.0f, -1.5f)};
-
-  for (int idx = 0; idx < cubePositions.size(); ++idx) {
-    QColor c = QColor::fromRgb(QRandomGenerator::global()->generate());
-    rotate_axes.append(QVector3D(c.redF(), c.greenF(), c.blueF()));
+    // Request an update
+    update();
   }
 }
+
+// void OpenGLWidget::init_plot_data() {
+//  // 本函数初始化所有数据，
+//  // 立方体顶点位置矩阵，需要36个顶点(6个面 x 每个面有2个三角形组成 x
+//  // 每个三角形有3个顶点)
+//  // 以下坐标以第一象限坐标为第0个顶点，按照逆时针依次第1、2、3个顶点
+//  positionData = {
+//      // Position(3个)   // Texture(2个)
+//      -0.8f, -0.8f, -0.8f, //
+//      0.8f,  -0.8f, -0.8f, //
+//      0.8f,  0.8f,  -0.8f, //
+//      0.8f,  0.8f,  -0.8f, //
+//      -0.8f, 0.8f,  -0.8f, //
+//      -0.8f, -0.8f, -0.8f, //
+
+//      -0.8f, -0.8f, 0.8f, //
+//      0.8f,  -0.8f, 0.8f, //
+//      0.8f,  0.8f,  0.8f, //
+//      0.8f,  0.8f,  0.8f, //
+//      -0.8f, 0.8f,  0.8f, //
+//      -0.8f, -0.8f, 0.8f, //
+
+//      -0.8f, 0.8f,  0.8f,  //
+//      -0.8f, 0.8f,  -0.8f, //
+//      -0.8f, -0.8f, -0.8f, //
+//      -0.8f, -0.8f, -0.8f, //
+//      -0.8f, -0.8f, 0.8f,  //
+//      -0.8f, 0.8f,  0.8f,  //
+
+//      0.8f,  0.8f,  0.8f,  //
+//      0.8f,  0.8f,  -0.8f, //
+//      0.8f,  -0.8f, -0.8f, //
+//      0.8f,  -0.8f, -0.8f, //
+//      0.8f,  -0.8f, 0.8f,  //
+//      0.8f,  0.8f,  0.8f,  //
+
+//      -0.8f, -0.8f, -0.8f, //
+//      0.8f,  -0.8f, -0.8f, //
+//      0.8f,  -0.8f, 0.8f,  //
+//      0.8f,  -0.8f, 0.8f,  //
+//      -0.8f, -0.8f, 0.8f,  //
+//      -0.8f, -0.8f, -0.8f, //
+
+//      -0.8f, 0.8f,  -0.8f, //
+//      0.8f,  0.8f,  -0.8f, //
+//      0.8f,  0.8f,  0.8f,  //
+//      0.8f,  0.8f,  0.8f,  //
+//      -0.8f, 0.8f,  0.8f,  //
+//      -0.8f, 0.8f,  -0.8f  //
+//  };
+
+//  colorData = {
+//      1.0f, 0.84f, 0.0f, // R: Point 1 color
+//      1.0f, 0.84f, 0.0f, // R: Point 1 color
+//      1.0f, 0.84f, 0.0f, // R: Point 1 color
+//      1.0f, 0.84f, 0.0f, // R: Point 1 color
+//      1.0f, 0.84f, 0.0f, // R: Point 1 color
+//      1.0f, 0.84f, 0.0f, // R: Point 1 color
+
+//      0.0f, 0.84f, 0.0f, // R: Point 1 color
+//      0.0f, 0.84f, 0.0f, // R: Point 1 color
+//      0.0f, 0.84f, 0.0f, // R: Point 1 color
+//      0.0f, 0.84f, 0.0f, // R: Point 1 color
+//      0.0f, 0.84f, 0.0f, // R: Point 1 color
+//      0.0f, 0.84f, 0.0f, // R: Point 1 color
+
+//      0.0f, 0.0f,  0.84f, // R: Point 1 color
+//      0.0f, 0.0f,  0.84f, // R: Point 1 color
+//      0.0f, 0.0f,  0.84f, // R: Point 1 color
+//      0.0f, 0.0f,  0.84f, // R: Point 1 color
+//      0.0f, 0.0f,  0.84f, // R: Point 1 color
+//      0.0f, 0.0f,  0.84f, // R: Point 1 color
+
+//      1.0f, 0.0f,  0.0f, // R: Point 1 color
+//      1.0f, 0.0f,  0.0f, // R: Point 1 color
+//      1.0f, 0.0f,  0.0f, // R: Point 1 color
+//      1.0f, 0.0f,  0.0f, // R: Point 1 color
+//      1.0f, 0.0f,  0.0f, // R: Point 1 color
+//      1.0f, 0.0f,  0.0f, // R: Point 1 color
+
+//      0.0f, 0.84f, 1.0f, // R: Point 1 color
+//      0.0f, 0.84f, 1.0f, // R: Point 1 color
+//      0.0f, 0.84f, 1.0f, // R: Point 1 color
+//      0.0f, 0.84f, 1.0f, // R: Point 1 color
+//      0.0f, 0.84f, 1.0f, // R: Point 1 color
+//      0.0f, 0.84f, 1.0f, // R: Point 1 color
+
+//      1.0f, 0.0f,  1.0f, // R: Point 1 color
+//      1.0f, 0.0f,  1.0f, // R: Point 1 color
+//      1.0f, 0.0f,  1.0f, // R: Point 1 color
+//      1.0f, 0.0f,  1.0f, // R: Point 1 color
+//      1.0f, 0.0f,  1.0f, // R: Point 1 color
+//      1.0f, 0.0f,  1.0f  // R: Point 1 color
+//  };
+
+//  //  立方体在世界坐标下的位置
+//  cubePositions = {QVector3D(0.0f, 0.0f, 0.0f),    QVector3D(2.0f, 5.0f, -15.0f),
+//                   QVector3D(-1.5f, -2.2f, -2.5f), QVector3D(-3.8f, -2.0f, -12.3f),
+//                   QVector3D(2.4f, -0.4f, -3.5f),  QVector3D(-1.7f, 3.0f, 7.5f),
+//                   QVector3D(1.3f, -2.0f, -2.5f),  QVector3D(1.5f, 2.0f, -2.5f),
+//                   QVector3D(1.5f, 0.2f, -1.5f),   QVector3D(-1.3f, 1.0f, -1.5f)};
+
+//  for (int idx = 0; idx < cubePositions.size(); ++idx) {
+//    QColor c = QColor::fromRgb(QRandomGenerator::global()->generate());
+//    rotate_axes.append(QVector3D(c.redF(), c.greenF(), c.blueF()));
+//  }
+//}

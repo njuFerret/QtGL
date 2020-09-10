@@ -11,7 +11,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # QtCreator supports the following variables for Android, which are identical to qmake Android variables.
 # Check http://doc.qt.io/qt-5/deployment-android.html for more information.
@@ -26,6 +26,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #    endif()
 #endif()
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
 if(ANDROID)
@@ -36,15 +38,13 @@ if(ANDROID)
     mainwidget.ui
   )
 else()
-  add_executable(${PROJECT_NAME}
-    main.cpp
-    mainwidget.cpp
-    mainwidget.h
-    openglwidget.cpp
-    openglwidget.h
-    mainwidget.ui
-    ${PROJECT_NAME}.qrc
-  )
+    file(GLOB SRC_LIST  *.cpp *.ui *.qrc)
+  add_executable(${PROJECT_NAME}  ${SRC_LIST})
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets)
+
+# file(GLOB SRC_LIST  *.cpp *.ui *.qrc)
+# foreach(file IN LISTS SRC_LIST)
+#     message(STATUS ${file})
+# endforeach(file)

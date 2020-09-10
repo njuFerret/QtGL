@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/">
-        <file>shader/basic.frag</file>
-        <file>shader/basic.vert</file>
+        <file>res/shader/basic.frag</file>
+        <file>res/shader/basic.vert</file>
+        <file alias="tex_cube.png">res/texures/cube.png</file>
     </qresource>
 </RCC>
