@@ -14,6 +14,7 @@ class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 public:
   OpenGLWidget(QWidget *parent = nullptr);
+  ~OpenGLWidget() override;
 
 protected:
   void initializeGL() override;
@@ -28,9 +29,11 @@ private:
   QTimer *timer;
   QOpenGLShaderProgram *program;
   QOpenGLBuffer vbo;
+  QOpenGLBuffer ibo;
   GLfloat angle;
 
   QVector<GLfloat> positionData;
+  QVector<GLushort> vertex_indices;
   QVector<GLfloat> colorData;
   QVector<QVector3D> cubePositions;
   QVector<QVector3D> rotate_axes;
