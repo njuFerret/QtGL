@@ -1,6 +1,7 @@
 #include "openglwidget.h"
 #include "geometryengine.h"
 
+#include <QMouseEvent>
 #include <QOpenGLShader>
 #include <QOpenGLShaderProgram>
 #include <QRandomGenerator>
@@ -73,6 +74,48 @@ void OpenGLWidget::initTextures() {
   texture->setWrapMode(QOpenGLTexture::Repeat);
 }
 
+void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
+  if (event->button() == Qt::LeftButton) {
+    // Save mouse press position
+    mousePressPosition = QVector2D(event->localPos());
+    beginDrag = true;
+  }
+}
+
+void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
+  if (event->button() == Qt::LeftButton && beginDrag) {
+    // Mouse release position - mouse press position
+    QVector2D diff = QVector2D(event->localPos()) - mousePressPosition;
+
+    // Rotation axis is perpendicular to the mouse position difference
+    // vector
+    QVector3D n = QVector3D(diff.y(), diff.x(), 0.0).normalized();
+
+    // Accelerate angular speed relative to the length of the mouse sweep
+    qreal acc = diff.length() / 100.0;
+
+    // Calculate new rotation axis as weighted sum
+    rotationAxis = (rotationAxis * angularSpeed + n * acc).normalized();
+
+    // Increase angular speed
+    angularSpeed += acc;
+    beginDrag = false;
+  }
+}
+
+void OpenGLWidget::wheelEvent(QWheelEvent *event) {
+
+  if (event->angleDelta().y() < 0) {
+    zoomScale /= 1.1;
+  } else {
+    zoomScale *= 1.1;
+  }
+  GLint viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  resizeGL(viewport[2], viewport[3]);
+  update();
+}
+
 void OpenGLWidget::resizeGL(int w, int h) {
   qreal aspect = qreal(w) / qreal(h ? h : 1);
 
@@ -90,6 +133,8 @@ void OpenGLWidget::paintGL() {
 
   // Clear color and depth buffer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  //  glLoadIdentity();
+  //  glScaled(zoomScale, zoomScale, zoomScale);
 
   texture->bind();
 
@@ -99,6 +144,7 @@ void OpenGLWidget::paintGL() {
   matrix.translate(0.0, 0.0, -5.0);
   matrix.rotate(rotation);
 
+  //  qDebug() << view;
   // Set modelview-projection matrix
   program->setUniformValue("mvp_matrix", projection * matrix);
   //! [6]

@@ -38,7 +38,7 @@ if(ANDROID)
     mainwidget.ui
   )
 else()
-    file(GLOB SRC_LIST  *.cpp *.ui *.qrc)
+  file(GLOB SRC_LIST  *.h *.cpp *.ui *.qrc)
   add_executable(${PROJECT_NAME}  ${SRC_LIST})
 endif()
 

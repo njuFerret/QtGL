@@ -36,15 +36,8 @@ if(ANDROID)
     mainwidget.ui
   )
 else()
-  add_executable(${PROJECT_NAME}
-    main.cpp
-    mainwidget.cpp
-    mainwidget.h
-    openglwidget.cpp
-    openglwidget.h
-    mainwidget.ui
-    ${PROJECT_NAME}.qrc
-  )
+  file(GLOB SRC_LIST  *.h *.cpp *.ui *.qrc)
+  add_executable(${PROJECT_NAME}  ${SRC_LIST})
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets)

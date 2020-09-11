@@ -47,11 +47,21 @@ private:
   QOpenGLTexture *texture = nullptr;
 
   QMatrix4x4 projection;
+  //  QMatrix4x4 view;
+  GLfloat zoomScale = 1.0f;
 
   QVector2D mousePressPosition;
   QVector3D rotationAxis;
   qreal angularSpeed = 0;
   QQuaternion rotation;
+
+  bool beginDrag = false;
+
+  // QWidget interface
+protected:
+  void mousePressEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
 };
 
 #endif // OPENGLWIDGET_H
