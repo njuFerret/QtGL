@@ -35,20 +35,13 @@ protected:
 private:
   QTimer *timer;
   QOpenGLShaderProgram *program;
-  //  QOpenGLBuffer vbo;
-  //  GLfloat angle;
-
-  //  QVector<GLfloat> positionData;
-  //  QVector<GLfloat> colorData;
-  //  QVector<QVector3D> cubePositions;
-  //  QVector<QVector3D> rotate_axes;
 
   GeometryEngine *geometries = nullptr;
   QOpenGLTexture *texture = nullptr;
 
   QMatrix4x4 projection;
   //  QMatrix4x4 view;
-  GLfloat zoomScale = 1.0f;
+  //  GLfloat zoomScale = 1.0f;
 
   QVector2D mousePressPosition;
   QVector3D rotationAxis;

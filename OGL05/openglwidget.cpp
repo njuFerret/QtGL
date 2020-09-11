@@ -105,15 +105,15 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent *event) {
 
 void OpenGLWidget::wheelEvent(QWheelEvent *event) {
 
-  if (event->angleDelta().y() < 0) {
-    zoomScale /= 1.1;
-  } else {
-    zoomScale *= 1.1;
-  }
-  GLint viewport[4];
-  glGetIntegerv(GL_VIEWPORT, viewport);
-  resizeGL(viewport[2], viewport[3]);
-  update();
+  //  if (event->angleDelta().y() < 0) {
+  //    zoomScale /= 1.1;
+  //  } else {
+  //    zoomScale *= 1.1;
+  //  }
+  //  GLint viewport[4];
+  //  glGetIntegerv(GL_VIEWPORT, viewport);
+  //  resizeGL(viewport[2], viewport[3]);
+  //  update();
 }
 
 void OpenGLWidget::resizeGL(int w, int h) {
@@ -133,8 +133,6 @@ void OpenGLWidget::paintGL() {
 
   // Clear color and depth buffer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  //  glLoadIdentity();
-  //  glScaled(zoomScale, zoomScale, zoomScale);
 
   texture->bind();
 
