@@ -1,0 +1,11 @@
+prefix=D:/Dev/msys2/home/lx/code/assimp-5.0.1/build/Assimp
+exec_prefix=D:/Dev/msys2/home/lx/code/assimp-5.0.1/build/Assimp/
+libdir=D:/Dev/msys2/home/lx/code/assimp-5.0.1/build/Assimp/lib
+includedir=D:/Dev/msys2/home/lx/code/assimp-5.0.1/build/Assimp/../include/include
+
+Name: Assimp
+Description: Import various well-known 3D model formats in an uniform manner.
+Version: 5.0.0
+Libs: -L${libdir} -lassimp
+Libs.private:  -lz
+Cflags: -I${includedir}
