@@ -28,11 +28,11 @@ protected:
 private:
   QTimer *timer;
   QOpenGLShaderProgram *program;
-  QOpenGLBuffer vbo;
-  QOpenGLBuffer ibo;
+  QOpenGLBuffer vbo; //  Vertex Buffer Object (顶点缓冲对象)
+  QOpenGLBuffer ebo; //  Element Buffer Object(索引缓冲对象)
   GLfloat angle;
 
-  QVector<GLfloat> positionData;
+  QVector<GLfloat> vertexData;
   QVector<GLushort> vertex_indices;
   QVector<GLfloat> colorData;
   QVector<QVector3D> cubePositions;

@@ -51,23 +51,29 @@
 #ifndef GEOMETRYENGINE_H
 #define GEOMETRYENGINE_H
 
+#include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
-#include <QOpenGLBuffer>
 
-class GeometryEngine : protected QOpenGLFunctions
-{
+struct VertexData;
+
+class GeometryEngine : protected QOpenGLFunctions {
 public:
-    GeometryEngine();
-    virtual ~GeometryEngine();
+  GeometryEngine();
+  virtual ~GeometryEngine();
 
-    void drawCubeGeometry(QOpenGLShaderProgram *program);
+  void renderCubes(QOpenGLShaderProgram *program);
 
 private:
-    void initCubeGeometry();
+  void initCubeGeometry();
+  void initGeometryData();
 
-    QOpenGLBuffer arrayBuf;
-    QOpenGLBuffer indexBuf;
+  QOpenGLBuffer arrayBuf;
+  QOpenGLBuffer indexBuf;
+  QVector<VertexData> vertices;
+  QVector<GLushort> indices;
+  //  QVector<QVector3D> cubePositions;
+  //  QVector<QVector3D> axes;
 };
 
 #endif // GEOMETRYENGINE_H

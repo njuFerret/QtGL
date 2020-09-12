@@ -5,7 +5,7 @@
 #include <QtMath>
 
 OpenGLWidget::OpenGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent), ibo(QOpenGLBuffer::IndexBuffer), angle(0) {
+    : QOpenGLWidget(parent), ebo(QOpenGLBuffer::IndexBuffer), angle(0) {
   init_plot_data();
   timer = new QTimer(this);
   timer->setInterval(1000 / 30);
@@ -16,7 +16,7 @@ OpenGLWidget::OpenGLWidget(QWidget *parent)
 OpenGLWidget::~OpenGLWidget() {
   makeCurrent();
   vbo.destroy();
-  ibo.destroy();
+  ebo.destroy();
   doneCurrent();
 }
 
@@ -38,17 +38,17 @@ void OpenGLWidget::initializeGL() {
   vbo.create();
   vbo.bind();
 
-  int size = positionData.size() + colorData.size();
+  int size = vertexData.size() + colorData.size();
   // vertex positions
-  vbo.allocate(positionData.data(), size * sizeof(GLfloat));
+  vbo.allocate(vertexData.data(), size * sizeof(GLfloat));
   // vertex colors
-  int offset = positionData.size();
+  int offset = vertexData.size();
   vbo.write(offset * sizeof(GLfloat), colorData.data(), colorData.size() * sizeof(GLfloat));
 
   // index buffer object
-  ibo.create();
-  ibo.bind();
-  ibo.allocate(vertex_indices.data(), vertex_indices.size() * sizeof(GLushort));
+  ebo.create();
+  ebo.bind();
+  ebo.allocate(vertex_indices.data(), vertex_indices.size() * sizeof(GLushort));
 
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
   glEnable(GL_DEPTH_TEST);
@@ -71,7 +71,7 @@ void OpenGLWidget::paintGL() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   vbo.bind();
-  ibo.bind();
+  ebo.bind();
   //  int size = positionData.size() + colorData.size();
 
   // vertex positions
@@ -146,8 +146,7 @@ void OpenGLWidget::init_plot_data() {
   //        顶点顺序相同时，索引为 [0,1,2,3],3
 
   // 立方体顶点位置矩阵，
-  positionData = {
-      // Position(3个)   // Texture(2个)
+  vertexData = {
       // Data for face 0
       -0.8f, -0.8f, 0.8f, // v0
       0.8f, -0.8f, 0.8f,  // v1
@@ -235,6 +234,7 @@ void OpenGLWidget::init_plot_data() {
 
   for (int idx = 0; idx < cubePositions.size(); ++idx) {
     QColor c = QColor::fromRgb(QRandomGenerator::global()->generate());
+    qDebug() << c;
     rotate_axes.append(QVector3D(c.redF(), c.greenF(), c.blueF()));
   }
 }

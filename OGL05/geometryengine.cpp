@@ -50,6 +50,8 @@
 
 #include "geometryengine.h"
 
+//#include <QColor>
+//#include <QRandomGenerator>
 #include <QVector2D>
 #include <QVector3D>
 
@@ -62,9 +64,11 @@ struct VertexData {
 GeometryEngine::GeometryEngine() : indexBuf(QOpenGLBuffer::IndexBuffer) {
   initializeOpenGLFunctions();
 
-  // Generate 2 VBOs
+  // Generate VBOs and EBOs
   arrayBuf.create();
   indexBuf.create();
+
+  initGeometryData();
 
   // Initializes cube geometry and transfers it to VBOs
   initCubeGeometry();
@@ -77,10 +81,24 @@ GeometryEngine::~GeometryEngine() {
 //! [0]
 
 void GeometryEngine::initCubeGeometry() {
+
+  //! [1]
+  // Transfer vertex data to VBO 0
+  arrayBuf.bind();
+  arrayBuf.allocate(vertices.data(), vertices.size() * sizeof(VertexData));
+
+  // Transfer index data to EBO
+  indexBuf.bind();
+  indexBuf.allocate(indices.data(), indices.size() * sizeof(GLushort));
+  //  qDebug() << indexBuf.size() << indices.size() << sizeof(GLushort);
+  //! [1]
+}
+
+void GeometryEngine::initGeometryData() {
   // For cube we would need only 8 vertices but we have to
   // duplicate vertex for each face because texture coordinate
   // is different.
-  VertexData vertices[] = {
+  vertices = {
       // Vertex data for face 0
       {QVector3D(-1.0f, -1.0f, 1.0f), QVector2D(0.0f, 0.0f)}, // v0
       {QVector3D(1.0f, -1.0f, 1.0f), QVector2D(0.33f, 0.0f)}, // v1
@@ -126,11 +144,13 @@ void GeometryEngine::initCubeGeometry() {
   //     connecting strips have same vertex order then only last
   //     index of the first strip needs to be duplicated.
 
-  // 用于使用三角形绘制立方体的索引
   // 三角形可通过重复索引进行连接。如果两个相邻三角形的顶点顺序相反，
-  // 则第1个三角形的第1个顶点和第二个三角形的最后一个顶点的索引需要重复
-  // 如果两个相邻三角形具有相同的顶点顺序，则只需要重复第1个三角形的最后一个顶点的索引
-  GLushort indices[] = {
+  // 则第第1个顶点和最后一个顶点的索引需要重复,
+  // 如果两个相邻三角形具有相同的顶点顺序，则只需要重复最后一个顶点的索引
+  // 例如 0,1,2,3，中括号内为顶点列表
+  //        顶点顺序相反时，索引为 0,[0,1,2,3],3
+  //        顶点顺序相同时，索引为 [0,1,2,3],3
+  indices = {
       0,  1,  2,  3,  3,      // Face 0 - triangle strip ( v0,  v1,  v2,  v3)
       4,  4,  5,  6,  7,  7,  // Face 1 - triangle strip ( v4,  v5,  v6,  v7)
       8,  8,  9,  10, 11, 11, // Face 2 - triangle strip ( v8,  v9, v10, v11)
@@ -139,19 +159,22 @@ void GeometryEngine::initCubeGeometry() {
       20, 20, 21, 22, 23      // Face 5 - triangle strip (v20, v21, v22, v23)
   };
 
-  //! [1]
-  // Transfer vertex data to VBO 0
-  arrayBuf.bind();
-  arrayBuf.allocate(vertices, 24 * sizeof(VertexData));
+  //  //  立方体在世界坐标下的位置
+  //  cubePositions = {QVector3D(0.0f, 0.0f, 0.0f), QVector3D(2.0f, 5.0f, -15.0f),      //
+  //                   QVector3D(-1.5f, -2.2f, -2.5f), QVector3D(-3.8f, -2.0f, -12.3f), //
+  //                   //                   QVector3D(2.4f, -0.4f, -3.5f),  QVector3D(-1.7f, 3.0f, 7.5f),
+  //                   //                   QVector3D(1.3f, -2.0f, -2.5f),  QVector3D(1.5f, 2.0f, -2.5f),
+  //                   QVector3D(1.5f, 0.2f, -1.5f), QVector3D(-1.3f, 1.0f, -1.5f)};
 
-  // Transfer index data to VBO 1
-  indexBuf.bind();
-  indexBuf.allocate(indices, 34 * sizeof(GLushort));
-  //! [1]
+  //  for (int idx = 0; idx < cubePositions.size(); ++idx) {
+  //    QColor c = QColor::fromRgb(QRandomGenerator::global()->generate());
+  //    qDebug() << c;
+  //    axes.append(QVector3D(c.redF(), c.greenF(), c.blueF()));
+  //  }
 }
 
 //! [2]
-void GeometryEngine::drawCubeGeometry(QOpenGLShaderProgram *program) {
+void GeometryEngine::renderCubes(QOpenGLShaderProgram *program) {
   // Tell OpenGL which VBOs to use
   arrayBuf.bind();
   indexBuf.bind();
@@ -173,6 +196,6 @@ void GeometryEngine::drawCubeGeometry(QOpenGLShaderProgram *program) {
   program->setAttributeBuffer(texcoordLocation, GL_FLOAT, offset, 2, sizeof(VertexData));
 
   // Draw cube geometry using indices from VBO 1
-  glDrawElements(GL_TRIANGLE_STRIP, 34, GL_UNSIGNED_SHORT, nullptr);
+  glDrawElements(GL_TRIANGLE_STRIP, indices.size(), GL_UNSIGNED_SHORT, nullptr);
 }
 //! [2]

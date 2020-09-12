@@ -151,7 +151,7 @@ void OpenGLWidget::paintGL() {
   program->setUniformValue("texture", 0);
 
   // Draw cube geometry
-  geometries->drawCubeGeometry(program);
+  geometries->renderCubes(program);
 }
 
 void OpenGLWidget::onTimerOut() {
