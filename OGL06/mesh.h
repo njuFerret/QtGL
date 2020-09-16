@@ -6,6 +6,7 @@
 //#include <glm/gtc/type_ptr.hpp>
 //#include "Shader.h"
 #include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
 #include <QOpenGLFunctions>
 #include <QString>
 #include <QVector2D>
@@ -28,19 +29,18 @@ struct Texture {
 
 class Mesh {
 public:
-  Mesh(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indices,
-       std::vector<Texture> &textures);
-  //  void renderMesh(Shader shader);
+  Mesh(const QVector<Vertex> &newVertices, const QVector<GLuint> &newIndices, QVector<Texture> &newTextures);
+  void renderMesh();
 
 public:
-  std::vector<Vertex> vertices;
-  std::vector<GLuint> indices;
-  std::vector<Texture> textures;
+  QVector<Vertex> vertices;
+  QVector<GLuint> indices;
+  QVector<Texture> textures;
 
 private:
-  QOpenGLBuffer VAO;
-  QOpenGLBuffer VBO;
-  QOpenGLBuffer EBO; //渲染环境
+  QOpenGLVertexArrayObject vao;
+  QOpenGLBuffer vbo;
+  QOpenGLBuffer ebo; //渲染环境
 
   void setupMesh();
 };

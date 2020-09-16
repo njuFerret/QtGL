@@ -96,8 +96,11 @@ set( ASSIMP_INCLUDE_DIRS "${ASSIMP_ROOT_DIR}/include")
 if(ASSIMP_BUILD_SHARED_LIBS)
   set( ASSIMP_LIBRARIES ${sharedLibraryName})
 else()
-  set( ASSIMP_LIBRARIES ${staticLibraryName})
+#  set( ASSIMP_LIBRARIES ${staticLibraryName})
+  set( ASSIMP_LIBRARIES ${staticLibraryName} IrrXML zlib)
 endif()
+
+
 
 # for compatibility with pkg-config
 set(ASSIMP_CFLAGS_OTHER "${ASSIMP_CXX_FLAGS}")

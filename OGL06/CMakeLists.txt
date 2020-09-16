@@ -24,14 +24,12 @@ include_directories(${ASSIMP_INCLUDE_DIRS})
 link_directories(${ASSIMP_LIBRARY_DIRS})
 #message(${ASSIMP_DIR}
 #message(${ASSIMP_INCLUDE_DIRS})
-#message(${ASSIMP_LIBRARIES})
+message(${ASSIMP_LIBRARIES})
 #message(${ASSIMP_LIBRARY_DIRS})
-
-
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED )
 
 file(GLOB SRC_LIST  *.h *.cpp *.ui *.qrc)
 add_executable(${PROJECT_NAME}  ${SRC_LIST})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets ${ASSIMP_LIBRARIES} IrrXML zlib)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets ${ASSIMP_LIBRARIES} )

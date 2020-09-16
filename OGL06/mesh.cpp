@@ -1,15 +1,33 @@
 #include "mesh.h"
 
-Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indices,
-           std::vector<Texture> &textures) {
-  (this->vertices).insert((this->vertices).end(), vertices.begin(), vertices.end());
-  (this->indices).insert((this->indices).end(), indices.begin(), indices.end());
-  (this->textures).insert((this->textures).end(), textures.begin(), textures.end());
+Mesh::Mesh(const QVector<Vertex> &newVertices, const QVector<GLuint> &newIndices,
+           QVector<Texture> &newTextures) {
+    vertices = newVertices;
+    indices = newIndices;
+    textures = newTextures;
 
-  setupMesh();
+//  (this->vertices).insert((this->vertices).end(), vertices.begin(), vertices.end());
+//  (this->indices).insert((this->indices).end(), indices.begin(), indices.end());
+//  (this->textures).insert((this->textures).end(), textures.begin(), textures.end());
+
+    setupMesh();
+}
+
+void Mesh::renderMesh()
+{
+
 }
 
 void Mesh::setupMesh() {
+
+    vao.create();
+    vao.bind();
+
+    vbo.create();
+    vbo.bind();
+
+    ebo.create();
+    ebo.bind();
   /*
 glGenVertexArrays(1, &VAO);
 glGenBuffers(1, &VBO);
