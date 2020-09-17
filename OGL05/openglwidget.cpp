@@ -23,16 +23,12 @@ OpenGLWidget::~OpenGLWidget() {
 }
 
 void OpenGLWidget::initShader() {
-  QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
-  vshader->compileSourceFile(":/res/shader/basic.vert");
-  // fragment shader
-  QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
-  fshader->compileSourceFile(":/res/shader/basic.frag");
-
   // shader program
   program = new QOpenGLShaderProgram(this);
-  program->addShader(vshader);
-  program->addShader(fshader);
+  // vertex shader
+  program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shader.vert");
+  // Fragment shader
+  program->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shader.frag");
 
   program->link();
   program->bind();

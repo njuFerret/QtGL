@@ -11,25 +11,40 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # QtCreator supports the following variables for Android, which are identical to qmake Android variables.
 # Check http://doc.qt.io/qt-5/deployment-android.html for more information.
 # They need to be set before the find_package(Qt5 ...) call.
 
-set(ASSIMP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/Assimp/lib/cmake/assimp-5.0)
+#if(ANDROID)
+#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+#    if (ANDROID_ABI STREQUAL "armeabi-v7a")
+#        set(ANDROID_EXTRA_LIBS
+#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libcrypto.so
+#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libssl.so)
+#    endif()
+#endif()
 
-find_package(ASSIMP REQUIRED)
-include_directories(${ASSIMP_INCLUDE_DIRS})
-link_directories(${ASSIMP_LIBRARY_DIRS})
-#message(${ASSIMP_DIR}
-#message(${ASSIMP_INCLUDE_DIRS})
-message(${ASSIMP_LIBRARIES})
-#message(${ASSIMP_LIBRARY_DIRS})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED )
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
-file(GLOB SRC_LIST  *.h *.cpp *.ui *.qrc)
-add_executable(${PROJECT_NAME}  ${SRC_LIST})
+if(ANDROID)
+  add_library(${PROJECT_NAME} SHARED
+    main.cpp
+    mainwidget.cpp
+    mainwidget.h
+    mainwidget.ui
+  )
+else()
+  file(GLOB SRC_LIST  *.h *.cpp *.ui *.qrc)
+  add_executable(${PROJECT_NAME}  ${SRC_LIST})
+endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets ${ASSIMP_LIBRARIES} )
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets)
+
+# file(GLOB SRC_LIST  *.cpp *.ui *.qrc)
+# foreach(file IN LISTS SRC_LIST)
+#     message(STATUS ${file})
+# endforeach(file)

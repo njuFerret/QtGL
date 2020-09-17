@@ -3,12 +3,16 @@
 
 #include <QMatrix4x4>
 #include <QOpenGLFunctions>
+//#include <QOpenGLShaderProgram>
+#include <QOpenGLTexture>
 #include <QOpenGLWidget>
+#include <QQuaternion>
 #include <QTimer>
+#include <QVector2D>
 #include <QVector3D>
 
+class GeometryEngine;
 class QOpenGLShaderProgram;
-#include <QOpenGLBuffer>
 
 class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
@@ -23,23 +27,34 @@ protected:
 
 protected:
   void onTimerOut();
-  void init_plot_data();
+  //  void init_plot_data();
+
+  void initShader();
+  void initTextures();
 
 private:
   QTimer *timer;
   QOpenGLShaderProgram *program;
-  QOpenGLBuffer vbo; //  Vertex Buffer Object (顶点缓冲对象)
-  QOpenGLBuffer ebo; //  Element Buffer Object(索引缓冲对象)
-  GLfloat angle;
 
-  QVector<GLfloat> vertexData;
-  QVector<GLushort> vertex_indices;
-  QVector<GLfloat> colorData;
-  QVector<QVector3D> cubePositions;
-  QVector<QVector3D> rotate_axes;
+  GeometryEngine *geometries = nullptr;
+  QOpenGLTexture *texture = nullptr;
 
-  QMatrix4x4 matrixView;
-  QMatrix4x4 matrixProjection;
+  QMatrix4x4 projection;
+  //  QMatrix4x4 view;
+  //  GLfloat zoomScale = 1.0f;
+
+  QVector2D mousePressPosition;
+  QVector3D rotationAxis;
+  qreal angularSpeed = 0;
+  QQuaternion rotation;
+
+  bool beginDrag = false;
+
+  // QWidget interface
+protected:
+  void mousePressEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
 };
 
 #endif // OPENGLWIDGET_H
